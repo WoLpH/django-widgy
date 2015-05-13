@@ -5,6 +5,8 @@ from django.test.utils import override_settings
 from django.utils.unittest import skipUnless
 from django.contrib.sites.models import Site
 from django.conf import settings
+from django.conf.urls import url, include
+from django.core.urlresolvers import get_resolver
 
 from argonauts.testutils import JsonTestCase
 
@@ -14,15 +16,20 @@ from widgy.contrib.widgy_mezzanine.site import WidgySiteMultiSite
 from .test_core import UserSetup, PageSetup, TestCase
 
 WidgyPage = get_widgypage_model()
+widgy_site = WidgySiteMultiSite()
 
 PAGE_BUILDER_INSTALLED = 'widgy.contrib.page_builder' in settings.INSTALLED_APPS
 
-@skipUnless(PAGE_BUILDER_INSTALLED)
-@override_settings(WIDGY_MEZZANINE_SITE='widgy.contrib.widgy_mezzanine.tests.widgy_site_multi_site')
+urlpatterns = get_resolver(None).url_patterns
+urlpatterns += [url('^widgy_site/', include(widgy_site.urls))]
+
+@skipUnless(PAGE_BUILDER_INSTALLED, 'page builder is not installed')
+@override_settings(WIDGY_MEZZANINE_SITE='widgy.contrib.widgy_mezzanine.tests.test_multisite.widgy_site')
 class TestMultiSitePermissions(UserSetup, PageSetup, JsonTestCase, TestCase):
-    widgy_site = WidgySiteMultiSite()
+    urls = 'widgy.contrib.widgy_mezzanine.tests.test_multisite'
 
     def setUp(self):
+        import pdb; pdb.set_trace()
         from widgy.contrib.page_builder.models import MainContent
         super(TestMultiSitePermissions, self).setUp()
         self.main_site = Site.objects.get(pk=1)

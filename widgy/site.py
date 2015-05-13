@@ -34,8 +34,6 @@ class WidgySite(object):
         return self.get_registry()
 
     def get_urls(self):
-        print(type(self))
-        assert False
         urlpatterns = patterns('',
             url('^node/$', self.node_view),
             url('^node/(?P<node_pk>[^/]+)/$', self.node_view),
