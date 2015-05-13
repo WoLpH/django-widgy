@@ -4,10 +4,8 @@ from django.core.exceptions import PermissionDenied
 from django.contrib.staticfiles import finders
 from django.contrib.auth import get_permission_codename
 from django.utils.functional import cached_property
-from mezzanine.utils.sites import current_site_id, has_site_permission
 
 from widgy import registry
-from widgy.models import Content
 from widgy.views import (
     NodeView,
     ContentView,
@@ -81,19 +79,11 @@ class WidgySite(object):
 
     def has_change_permission(self, request, obj_or_class):
         codename = get_permission_codename('change', obj_or_class._meta)
-        if isinstance(obj_or_class, Content):
-            a = any(current_site_id() == o.site_id for o in obj_or_class.get_root().node.versiontracker_set.get().owners)
-            if not has_site_permission(request.user) or not a:
-                raise PermissionDenied
         return request.user.has_perm('%s.%s' % (obj_or_class._meta.app_label, codename))
 
     def has_delete_permission(self, request, obj_or_class):
         def has_perm(o):
             codename = get_permission_codename('delete', o._meta)
-            if isinstance(obj_or_class, Content):
-                a = any(current_site_id() == o.site_id for o in obj_or_class.get_root().node.versiontracker_set.get().owners)
-                if not has_site_permission(request.user) or not a:
-                    raise PermissionDenied
             return request.user.has_perm('%s.%s' % (o._meta.app_label, codename))
 
         if isinstance(obj_or_class, type):
