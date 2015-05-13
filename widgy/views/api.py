@@ -110,15 +110,19 @@ class NodeView(WidgyView):
         except LookupError:
             raise Http404
 
-        if not self.site.has_add_permission(request, content_class):
-            raise PermissionDenied(_("You don't have permission to add this widget."))
-
         try:
             right = get_object_or_404(Node, pk=extract_id(data['right_id']))
-            content = right.content.add_sibling(self.site, content_class)
+            # TODO: Optimize away this extra query
+            parent = right.get_parent()
+            create_content = right.content.add_sibling
         except Http404:
             parent = get_object_or_404(Node, pk=extract_id(data['parent_id']))
-            content = parent.content.add_child(self.site, content_class)
+            create_content = parent.content.add_child
+
+        if not self.site.has_add_permission(request, parent.content, content_class):
+            raise PermissionDenied(_("You don't have permission to add this widget."))
+
+        content = create_content(self.site, content_class)
 
         return self.render_as_node(content.node.to_json(self.site),
                                    status=201)

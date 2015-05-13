@@ -36,9 +36,11 @@ from widgy.contrib.widgy_mezzanine.views import ClonePageView, UnpublishView
 from widgy.db.fields import get_site
 
 from widgy.contrib.widgy_mezzanine.admin import WidgyPageAdmin
+from widgy.contrib.widgy_mezzanine.site import WidgySiteMultiSite
 
 User = get_user_model()
 widgy_site = WidgySite()
+widgy_site_multi_site = WidgySiteMultiSite()
 WidgyPage = get_widgypage_model()
 
 # XXX: Let django import the urlconf module. Django does it smarter
@@ -626,8 +628,10 @@ class TestPublicationCommitHandling(PageSetup, TestCase):
         self.assertEqual(refetch(self.page).status, CONTENT_STATUS_PUBLISHED)
         self.assertEqual(refetch(self.page).publish_date, refetch(c2).publish_at)
 
-
+@override_settings(WIDGY_MEZZANINE_SITE='widgy.contrib.widgy_mezzanine.tests.widgy_site_multi_site')
 class TestMultiSitePermissions(UserSetup, PageSetup, JsonTestCase, TestCase):
+    widgy_site = WidgySiteMultiSite()
+
     def setUp(self):
         super(TestMultiSitePermissions, self).setUp()
         self.main_site = Site.objects.get(pk=1)
@@ -644,7 +648,6 @@ class TestMultiSitePermissions(UserSetup, PageSetup, JsonTestCase, TestCase):
 
         self.staffuser.sitepermissions.sites.add(self.main_site)
 
-    @unittest.skip("Doesn't work")
     def test_cant_create_node_on_other_site(self):
         self.client.login(username='staffuser', password='password')
 
