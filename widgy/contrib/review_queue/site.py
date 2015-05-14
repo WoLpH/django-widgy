@@ -51,6 +51,3 @@ class ReviewedWidgySite(WidgySite):
     def revert_view(self):
         return RevertView.as_view(
             site=self, template_name='review_queue/revert.html')
-
-    def has_add_permission(*args, **kwargs):
-        return True

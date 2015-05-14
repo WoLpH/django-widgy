@@ -8,7 +8,7 @@ from django.conf import settings
 from django.conf.urls import url, include
 from django.core.urlresolvers import get_resolver
 
-from argonauts.testutils import JsonTestCase
+from argonauts.testutils import JsonTestMixin
 
 from widgy.site import WidgySite
 from widgy.contrib.widgy_mezzanine import get_widgypage_model
@@ -33,14 +33,11 @@ if REVIEW_QUEUE_INSTALLED:
     urlpatterns += [url('^reviewed_widgy_site/', include(reviewed_widgy_site.urls))]
 
 
-@skipUnless(PAGE_BUILDER_INSTALLED, 'page builder is not installed')
-@override_settings(
-    WIDGY_MEZZANINE_SITE='widgy.contrib.widgy_mezzanine.tests.test_multisite.widgy_site')
-class TestPermissions(UserSetup, PageSetup, JsonTestCase):
+class PermissionMixin(UserSetup, PageSetup, JsonTestMixin):
     urls = 'widgy.contrib.widgy_mezzanine.tests.test_multisite'
 
     def setUp(self):
-        super(TestPermissions, self).setUp()
+        super(PermissionMixin, self).setUp()
 
         from widgy.contrib.page_builder.models import MainContent
         self.main_site = Site.objects.get(pk=1)
@@ -188,8 +185,16 @@ class TestPermissions(UserSetup, PageSetup, JsonTestCase):
 
         self.assertEqual(response.status_code, http_client.FORBIDDEN)
 
-@skipUnless(REVIEW_QUEUE_INSTALLED, 'The review queue is not installed')
+
+@override_settings(
+    WIDGY_MEZZANINE_SITE='widgy.contrib.widgy_mezzanine.tests.test_multisite.widgy_site')
+@skipUnless(PAGE_BUILDER_INSTALLED, 'page builder is not installed')
+class TestPermissions(PermissionMixin, TestCase):
+    pass
+
+
+@skipUnless(PAGE_BUILDER_INSTALLED and REVIEW_QUEUE_INSTALLED, 'The review queue is not installed')
 @override_settings(
     WIDGY_MEZZANINE_SITE='widgy.contrib.widgy_mezzanine.tests.test_multisite.reviewed_widgy_site')
-class TestPermissionsReviewedWidgySite(TestPermissions):
+class TestPermissionsReviewedWidgySite(PermissionMixin, TestCase):
     pass
