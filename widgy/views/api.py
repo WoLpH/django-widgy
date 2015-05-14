@@ -214,8 +214,10 @@ class ShelfView(WidgyView):
     @staticmethod
     def get_compatibility_data(site, request, root_node):
         root_node.maybe_prefetch_tree()
+        parent = root_node.content
         content_classes = site.get_all_content_classes()
-        content_classes = list(filter(partial(site.has_add_permission, request), content_classes))
+        content_classes = [c for c in content_classes
+                           if site.has_add_permission(request, parent, c)]
         content_classes = root_node.filter_child_classes_recursive(site, content_classes)
         return ShelfView.serialize_content_classes(site, content_classes)
 

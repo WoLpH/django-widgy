@@ -10,18 +10,21 @@ from django.core.urlresolvers import get_resolver
 
 from argonauts.testutils import JsonTestCase
 
+from widgy.site import WidgySite
 from widgy.contrib.widgy_mezzanine import get_widgypage_model
-from widgy.contrib.widgy_mezzanine.site import WidgySiteMultiSite
+from widgy.contrib.widgy_mezzanine.site import MultiSitePermissionMixin
 
-from .test_core import UserSetup, PageSetup, TestCase
+from .test_core import UserSetup, PageSetup
 
 WidgyPage = get_widgypage_model()
-widgy_site = WidgySiteMultiSite()
+MultiSiteWidgySite = type('MultiSiteWidgySite', (MultiSitePermissionMixin, WidgySite), {})
+
+widgy_site = MultiSiteWidgySite()
+
 
 PAGE_BUILDER_INSTALLED = 'widgy.contrib.page_builder' in settings.INSTALLED_APPS
 
-urlpatterns = get_resolver(None).url_patterns
-urlpatterns += [url('^widgy_site/', include(widgy_site.urls))]
+urlpatterns = get_resolver(None).url_patterns + [url('^widgy_site/', include(widgy_site.urls))]
 
 @skipUnless(PAGE_BUILDER_INSTALLED, 'page builder is not installed')
 @override_settings(WIDGY_MEZZANINE_SITE='widgy.contrib.widgy_mezzanine.tests.test_multisite.widgy_site')
@@ -29,9 +32,9 @@ class TestMultiSitePermissions(UserSetup, PageSetup, JsonTestCase, TestCase):
     urls = 'widgy.contrib.widgy_mezzanine.tests.test_multisite'
 
     def setUp(self):
-        import pdb; pdb.set_trace()
-        from widgy.contrib.page_builder.models import MainContent
         super(TestMultiSitePermissions, self).setUp()
+
+        from widgy.contrib.page_builder.models import MainContent
         self.main_site = Site.objects.get(pk=1)
         self.other_site = Site.objects.create(domain='other.example.com', name='Other')
 
@@ -122,7 +125,6 @@ class TestMultiSitePermissions(UserSetup, PageSetup, JsonTestCase, TestCase):
         button = self.page.root_node.working_copy.content.add_child(
             self.widgy_site, Button, text='buttontext')
 
-        parent = self.page.root_node.working_copy.content
         response = self.client.put(
             button.get_api_url(self.widgy_site),
             {
@@ -140,7 +142,6 @@ class TestMultiSitePermissions(UserSetup, PageSetup, JsonTestCase, TestCase):
         button = self.other_page.root_node.working_copy.content.add_child(
             self.widgy_site, Button, text='buttontext')
 
-        parent = self.other_page.root_node.working_copy.content
         response = self.client.put(
             button.get_api_url(self.widgy_site),
             {
@@ -162,7 +163,6 @@ class TestMultiSitePermissions(UserSetup, PageSetup, JsonTestCase, TestCase):
         button = self.page.root_node.working_copy.content.add_child(
             self.widgy_site, Button, text='buttontext')
 
-        parent = self.page.root_node.working_copy.content
         response = self.client.delete(
             button.node.get_api_url(self.widgy_site),
             HTTP_HOST=self.main_site.domain,
@@ -173,7 +173,6 @@ class TestMultiSitePermissions(UserSetup, PageSetup, JsonTestCase, TestCase):
         button = self.other_page.root_node.working_copy.content.add_child(
             self.widgy_site, Button, text='buttontext')
 
-        parent = self.other_page.root_node.working_copy.content
         response = self.client.delete(
             button.node.get_api_url(self.widgy_site),
             HTTP_HOST=self.main_site.domain,

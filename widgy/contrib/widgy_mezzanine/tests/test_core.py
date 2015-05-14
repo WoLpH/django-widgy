@@ -23,7 +23,6 @@ from django.core.urlresolvers import get_resolver
 
 from mezzanine.core.models import (CONTENT_STATUS_PUBLISHED,
                                    CONTENT_STATUS_DRAFT)
-from argonauts.testutils import JsonTestCase
 
 from widgy.site import WidgySite
 from widgy.contrib.widgy_mezzanine import get_widgypage_model
@@ -37,9 +36,7 @@ widgy_site = WidgySite()
 WidgyPage = get_widgypage_model()
 
 # XXX: Let django import the urlconf module. Django does it smarter
-# FIXME: Don't monkeypatch urlpatterns
-urlpatterns = get_resolver(None).url_patterns
-urlpatterns += [url('^widgy_site/', include(widgy_site.urls))]
+urlpatterns = get_resolver(None).url_patterns + [url('^widgy_site/', include(widgy_site.urls))]
 
 FORM_BUILDER_INSTALLED = 'widgy.contrib.form_builder' in settings.INSTALLED_APPS
 
