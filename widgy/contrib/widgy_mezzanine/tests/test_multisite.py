@@ -2,7 +2,7 @@ from six.moves import http_client
 
 from django.test import TestCase
 from django.test.utils import override_settings
-from django.utils.unittest import skipUnless
+from django.utils.unittest import skipUnless, skip
 from django.contrib.sites.models import Site
 from django.conf import settings
 from django.conf.urls import url, include
@@ -13,26 +13,34 @@ from argonauts.testutils import JsonTestCase
 from widgy.site import WidgySite
 from widgy.contrib.widgy_mezzanine import get_widgypage_model
 from widgy.contrib.widgy_mezzanine.site import MultiSitePermissionMixin
+from widgy.contrib.review_queue.site import ReviewedWidgySite
 
 from .test_core import UserSetup, PageSetup
 
 WidgyPage = get_widgypage_model()
 MultiSiteWidgySite = type('MultiSiteWidgySite', (MultiSitePermissionMixin, WidgySite), {})
+ReviewedMultiSiteWidgySite = type('MultiSiteWidgySite', (MultiSitePermissionMixin, ReviewedWidgySite), {})
 
 widgy_site = MultiSiteWidgySite()
+reviewed_widgy_site = ReviewedMultiSiteWidgySite()
 
 
 PAGE_BUILDER_INSTALLED = 'widgy.contrib.page_builder' in settings.INSTALLED_APPS
+REVIEW_QUEUE_INSTALLED = 'widgy.contrib.review_queue' in settings.INSTALLED_APPS
 
 urlpatterns = get_resolver(None).url_patterns + [url('^widgy_site/', include(widgy_site.urls))]
+if REVIEW_QUEUE_INSTALLED:
+    urlpatterns += [url('^reviewed_widgy_site/', include(reviewed_widgy_site.urls))]
+
 
 @skipUnless(PAGE_BUILDER_INSTALLED, 'page builder is not installed')
-@override_settings(WIDGY_MEZZANINE_SITE='widgy.contrib.widgy_mezzanine.tests.test_multisite.widgy_site')
-class TestMultiSitePermissions(UserSetup, PageSetup, JsonTestCase, TestCase):
+@override_settings(
+    WIDGY_MEZZANINE_SITE='widgy.contrib.widgy_mezzanine.tests.test_multisite.widgy_site')
+class TestPermissions(UserSetup, PageSetup, JsonTestCase):
     urls = 'widgy.contrib.widgy_mezzanine.tests.test_multisite'
 
     def setUp(self):
-        super(TestMultiSitePermissions, self).setUp()
+        super(TestPermissions, self).setUp()
 
         from widgy.contrib.page_builder.models import MainContent
         self.main_site = Site.objects.get(pk=1)
@@ -179,3 +187,9 @@ class TestMultiSitePermissions(UserSetup, PageSetup, JsonTestCase, TestCase):
         )
 
         self.assertEqual(response.status_code, http_client.FORBIDDEN)
+
+@skipUnless(REVIEW_QUEUE_INSTALLED, 'The review queue is not installed')
+@override_settings(
+    WIDGY_MEZZANINE_SITE='widgy.contrib.widgy_mezzanine.tests.test_multisite.reviewed_widgy_site')
+class TestPermissionsReviewedWidgySite(TestPermissions):
+    pass
