@@ -112,7 +112,6 @@ class NodeView(WidgyView):
 
         try:
             right = get_object_or_404(Node, pk=extract_id(data['right_id']))
-            # TODO: Optimize away this extra query
             parent = right.get_parent()
             create_content = right.content.add_sibling
         except Http404:
